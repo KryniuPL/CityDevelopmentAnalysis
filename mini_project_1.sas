@@ -1,6 +1,6 @@
 /*import data*/
 proc import 
-	datafile='/shared/home/ud108519@student.sgh.waw.pl/SGH Projekt/Dane1.xlsx'
+	datafile='C:\Users\dragak01\GIT\CityDevelopmentAnalysis\data.xlsx'
 	dbms=xlsx
 	out=work.imported
 	replace;
@@ -16,23 +16,27 @@ data work_data;
 	else gender = 1;
 	if education_level in ('', 'Primary School', 'High School') then education_level = 0;
 	else education_level = 1;
-	num_target = input(target, 1.);
-	drop target;
-	rename num_target=target;
 run;
  
+data work_data_formatted;
+	set work_data;
+	target1 = input(target, best8.);
+	keep city_development_index gender education_level target1;
+	rename target1=target;
+run;
+
 /*proc freq and generated tables*/
-proc freq data=work_data order=formatted;
+proc freq data=work_data_formatted order=formatted;
 	tables _all_/relrisk chisq measures cmh;
 run;
 
-proc freq data=work_data order=formatted;
+proc freq data=work_data_formatted order=formatted;
 	tables city_development_index*gender*education_level*target/relrisk chisq measures cmh;
 run;
 
 /*proc logistic -  all variables used*/
 ods graphics on;
-proc logistic data=work_data plots(only)=roc;
+proc logistic data=work_data_formatted plots(only)=roc;
 	class city_development_index gender education_level;
 	model target=city_development_index gender education_level/aggregate scale=none lackfit
 	rsq;
@@ -42,7 +46,7 @@ ods graphics off;
 
 /*proc logistic and proc genmod*/
 ods graphics on;
-proc genmod data=work_data;
+proc genmod data=work_data_formatted;
 	class city_development_index gender education_level;
 	model target=city_development_index gender education_level/dist=bin
 	link=logit;	
@@ -50,7 +54,7 @@ run;
 ods graphics off;
 
 ods graphics on;
-proc genmod data=work_data desc;
+proc genmod data=work_data_formatted desc;
 	class city_development_index gender education_level;
 	model target=city_development_index gender education_level/dist=bin
 	link=logit;	
